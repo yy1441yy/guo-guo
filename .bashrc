@@ -134,17 +134,15 @@ function _git {
     local sub_command=${COMP_WORDS[1]} last_input=$1
     local compreply=
     case "$sub_command" in
-        "" )
-            compreply="${compreply}$(_get_git_sub_command)"
-            ;;
         "co" | "checkout" )
             if [ $COMP_CWORD -lt 3 ]; then
-                [ "$COMP_CWORD" == "1" ] && compreply="co "
+                [ $COMP_CWORD -eq 1 ] && compreply="co "
                 compreply="${compreply}$(_get_completed_branch ${COMP_WORDS[2]})"
 
             fi
             ;;
         * )
+            [ $COMP_CWORD -eq 1 ] && compreply="${compreply}$(_get_git_sub_command)"
             ;;
     esac
     [ "y$compreply" == "y" ] || COMPREPLY=($compreply)
