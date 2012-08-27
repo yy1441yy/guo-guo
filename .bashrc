@@ -1,7 +1,7 @@
 # .bashrc
 
 # Source global definitions
-##if [ -f /etc/bashrc ]; then
+#if [ -f /etc/bashrc ]; then
 #    /etc/bashrc
 #fi
 
@@ -54,11 +54,13 @@ function get_git_current_branch {
     done
 }
 
-function _get_git_sub_command {
-    git | head --lines -2 | tail --lines +8 | cut -c 4-11
+function _get_git_sub_commands {
+    local helpCommands=$(git | head --lines -2 | tail --lines +8 | cut -c 4-11)
+    echo "$helpCommands"
+    echo "cherry-pick"
 }
 
-function get_git_branchs {
+function _get_git_branchs {
     git branch | cut -c 3-
     git branch --remotes | cut -c 3- | sed -e '/^origin\//!d' -e '/^origin\/HEAD/d' -e 's/^origin\///'
     #local local_branchs=($(git branch | cut -c 3-))
@@ -121,22 +123,30 @@ function gi {
     fi
 }
 
-function _get_completed_branch {
-    local branchs=($(get_git_branchs)) seleted_branchs=
-    local branch=
-    for branch in ${branchs[@]}; do
-        [[ $branch == $1* ]] && seleted_branchs="$seleted_branchs $branch"
+function _filter {
+    [ $# -lt "2" ] && return
+    local startswith="$1"
+    shift
+    local list=("$@") selected_list=
+    echo -e "[$startswith | ${list[@]}]" 1>&2
+    for element in ${list[@]}; do
+        echo -e "[$element]" 1>&2
+        [[ $element == $1* ]] && selected_list="$selected_list $element"
     done
-    echo "$seleted_branchs"
+    echo "[$selected_list]"
+    echo $selected_list
 }
 
-function _get_completed_sub_command {
-    local branchs=($(get_git_branchs)) seleted_branchs=
-    local branch=
-    for branch in ${branchs[@]}; do
-        [[ $branch == $1* ]] && seleted_branchs="$seleted_branchs $branch"
-    done
-    echo "$seleted_branchs"
+function _get_completed_branchs {
+    local branchs=$(_get_git_branchs)
+    [ "y$1" == "y" ] && echo $branchs && return
+    echo $(_filter $1 $branchs)
+}
+
+function _get_completed_sub_commands {
+    local commands=$(_get_git_sub_commands)
+    [ "y$1" == "y" ] && echo $commands && return
+    echo $(_filter $1 $commands)
 }
 
 function _git {
@@ -151,15 +161,16 @@ function _git {
     case "$sub_command" in
         "co" | "checkout" )
             if [ $COMP_CWORD -lt 3 ]; then
-                [ $COMP_CWORD -eq 1 ] && compreply="co "
-                compreply="${compreply}$(_get_completed_branch ${COMP_WORDS[2]})"
+                #[ $COMP_CWORD -eq 1 ] && compreply="co"
+                compreply="$compreply $(_get_completed_branchs ${COMP_WORDS[2]})"
 
             fi
             ;;
         * )
-            [ $COMP_CWORD -eq 1 ] && compreply="${compreply}$(_get_completed_sub_command)"
+            [ $COMP_CWORD -eq 1 ] && compreply=$(_get_completed_sub_commands ${COMP_WORDS[1]})
             ;;
     esac
+    echo "[$compreply]" 1>&2
     [ "y$compreply" == "y" ] || COMPREPLY=($compreply)
 }
 
