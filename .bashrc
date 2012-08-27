@@ -1,34 +1,40 @@
 # .bashrc
 
 # Source global definitions
-if [ -f /etc/bashrc ]; then
-	. /etc/bashrc
-fi
+##if [ -f /etc/bashrc ]; then
+#    /etc/bashrc
+#fi
 
 # User specific aliases and functions
-alias dfsls='hadoop dfs -ls'
-alias dfsrm='hadoop dfs -rm'       # rm
-alias dfscat='hadoop dfs -cat'     # cat
-alias dfsrmr='hadoop dfs -rmr'     # rm -r
-alias dfsmkdir='hadoop dfs -mkdir' # mkdir
-alias dfsput='hadoop dfs -put'     # HDFS
-alias dfsget='hadoop dfs -get'     # HDFS
-alias gitshow='git show | grep "+++ b/"'
+# functions
+function _set_python_alias {
+    local pythonVersion=($(python --version 2>&1 | cut -c 8- | sed s/\\./\ /g))
+    if [ "${pythonVersion[0]}" -lt "2" ] || [ "${pythonVersion[1]}" -lt "6" ]; then
+        alias python='/home/bkapps/download/Python-2.7.3/python'
+    fi
+}
+
+function _mgrep {
+    grep "$1" * -R | grep -v /ssl/ | grep -v .production.js | grep "$1"
+}
+
+# aliases
 alias editrc='vi ~/.bashrc'
 alias rushrc='source ~/.bashrc'
+
 alias grep='grep --color'
-alias vim='vim -O'
+
 alias vi='vim'
-alias ci='vim'
-alias lld='ll | grep ^d'
-alias python='/home/bkapps/download/Python-2.7.3/python'
-alias searh='history | grep $1'
-alias runs='./script/devel/server -p 9899 -e'
+
+_set_python_alias
+
+alias runs='./script/devel/server -p 9899 -e; echo'
+alias runsd='./script/devel/server -p 9899 -e --debug; echo'
 alias runsql='mysql -h mysql.lo.mixi.jp -u root -P 3306'
 alias runt='perl -Ilib -I/usr/local/bundle-plack/lib/perl5 -I/usr/local/bundle-plack/lib/perl5/x86_64-linux-thread-multi script/voice/twitter_crawler/worker.pl --max-workers=2 --time-to-live=600 & perl -Ilib -I/usr/local/bundle-plack/lib/perl5 script/voice/twitter_crawler/manager.pl --max-clients=2 --time-to-live=600 &'
-alias vii='perl /home/bkapps/cmd/vii.pl $1'
 
-# User specific aliases and functions
+alias pvi='perl /home/bkapps/script/perl/vi.pl $1'
+
 function get_git_current_branch {
     local dir=. head GIT_BRANCH
     until [ "$dir" -ef / ]; do
@@ -124,6 +130,15 @@ function _get_completed_branch {
     echo "$seleted_branchs"
 }
 
+function _get_completed_sub_command {
+    local branchs=($(get_git_branchs)) seleted_branchs=
+    local branch=
+    for branch in ${branchs[@]}; do
+        [[ $branch == $1* ]] && seleted_branchs="$seleted_branchs $branch"
+    done
+    echo "$seleted_branchs"
+}
+
 function _git {
     #echo "[$@]" #arguments -> [command, last element, penultimate element]
     #echo "[${COMP_WORDS[@]}]" #all elements
@@ -142,7 +157,7 @@ function _git {
             fi
             ;;
         * )
-            [ $COMP_CWORD -eq 1 ] && compreply="${compreply}$(_get_git_sub_command)"
+            [ $COMP_CWORD -eq 1 ] && compreply="${compreply}$(_get_completed_sub_command)"
             ;;
     esac
     [ "y$compreply" == "y" ] || COMPREPLY=($compreply)
@@ -151,7 +166,7 @@ function _git {
 complete -F _git git
 
 export JAVA_HOME=/usr/java/jdk1.6.0_24
-export PATH=$JAVA_HOME/bin:/home/bkapps/git/guo-guo/lib:/home/bkapps/cmd/shell:/home/bkapps/google_appengine:$PATH
+export PATH=$JAVA_HOME/bin:/home/bkapps/git/guo-guo/lib:/home/bkapps/script/shell:/home/bkapps/google_appengine:$PATH
 export HADOOP_HOME=/usr/lib/hadoop
 export PIG_CLASSPATH=$HADOOP_HOME/conf
-export SVN_EDITOR="vim -c \"1!svn info | grep '^URL:' | sed -e 's/.*svn:\/\/jupiter\/\(.*\)/[\1] /'\" -c 'norm $'"
+#export SVN_EDITOR="vim -c \"1!svn info | grep '^URL:' | sed -e 's/.*svn:\/\/jupiter\/\(.*\)/[\1] /'\" -c 'norm $'"
