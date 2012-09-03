@@ -6,7 +6,8 @@ if [ -f /etc/bashrc ]; then
 fi
 
 export JAVA_HOME=/usr/java/jdk1.6.0_24
-export PATH=$JAVA_HOME/bin:/home/bkapps/git/guo-guo/lib:/home/bkapps/script/shell:/home/bkapps/google_appengine:$PATH
+export PATH=$JAVA_HOME/bin:/home/bkapps/script/shell:/home/bkapps/google_appengine:$PATH
+[[ "$(ctags --version | cut -c 17-19 | head -n 1)" < "5.8" ]] && export PATH=/home/bkapps/.vim/ctags-5.8:$PATH
 
 # User specific aliases and functions
 # aliases
@@ -90,10 +91,10 @@ function _prompt_command {
 PROMPT_COMMAND='_prompt_command'
 
 function gg {
-    local CMDS= GIT_CURRENT_BRANCH=$(get_git_current_branch)
+    local CMDS= GIT_CURRENT_BRANCH=$(_get_git_current_branch)
 
     if [[ "$1" == "pu"* ]]; then
-        CMDS=("git $1 origin $GIT_CURRENT_BRANCH")
+        CMDS=("git $1 origin $2$GIT_CURRENT_BRANCH")
     elif [ "$1" == "clone" ]; then
         shift
         [ $# -ne 1 ] && echo "Argument not correct" && return
@@ -103,6 +104,9 @@ function gg {
         shift 3
         [ $# -ne 1 ] && echo "Argument not correct" && return
         CMDS=("git remote add $reRepo git@git.lo.mixi.jp:$@" "git fetch $reRepo")
+    elif [ "$1" == "ca" ]; then
+        shift
+        CMDS=("git commit -a $@")
     fi
 
     if [ -z "$CMDS" ]; then
