@@ -69,7 +69,7 @@ function _get_default_ps1 {
     #\d date Wed Aug 22
     #\t time 15:48:17
     local w=`pwd | sed -e 's/\([^/]\)[^/]*\//\1\//g' -e 's/\/h\/\(b\|bkapps\)/~/'`
-    local t="\[\033[033;040m\]\t\[\033[0m\]" # yellow, black
+    local t="\[\033[033;040m\]\d\[\033[0m\]" # yellow, black
     echo "$w $t"
 }
 
