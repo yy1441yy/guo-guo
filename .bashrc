@@ -125,7 +125,7 @@ function gg {
 }
 
 function _filter {
-    [ $# -lt "2" ] && return
+    [ $# -lt 2 ] && return
     local startswith="$1"
     shift
     local list=("$@") selected_list=
@@ -147,6 +147,9 @@ function _get_completed_sub_commands {
     echo $(_filter $1 $commands)
 }
 
+#COLOR_RED='\e[1;31m'
+#COLOR_NONE='\e[0m'
+
 function _git {
     #echo "[$@]" #arguments -> [command, last element, penultimate element]
     #echo "[${COMP_WORDS[@]}]" #all elements
@@ -157,14 +160,26 @@ function _git {
     local sub_command=${COMP_WORDS[1]} last_input=$1
     local compreply=
     case "$sub_command" in
-        "co" | "checkout" )
-            if [ $COMP_CWORD -lt 3 ]; then
-                [ $COMP_CWORD -eq 1 ] && compreply="co"
-                compreply="$compreply $(_get_completed_branchs ${COMP_WORDS[2]})"
+        'add')
+            if [ $COMP_CWORD -eq 2 ]; then
+                local startswith=$(echo ${COMP_WORDS[2]} | sed 's/\./\\./')
+                compreply=$(git st | awk 'BEGIN { STATUS = 0; }; { if(STATUS == 3 && /#\t/) printf("%s(new)\n", $2); if(/# Untracked/) STATUS = 3; if(STATUS == 2 && /#\tboth/) printf("%s(merge)\n", $4); if(/# Unmerged/) STATUS = 2; if(STATUS == 1 && /#\tmodified:/) printf("%s(add)\n", $3); if(/# Changes/) STATUS = 1; }' | grep "^$startswith")
             fi
             ;;
+        'co' | 'checkout')
+            [ $COMP_CWORD -eq 1 ] && compreply='checkout'
+            [ $COMP_CWORD -eq 2 ] && compreply="$(_get_completed_branchs ${COMP_WORDS[2]})"
+            ;;
+        'merge')
+            [ $COMP_CWORD -eq 2 ] && compreply='--squash'
+            [ $COMP_CWORD -eq 3 ] && compreply="$(_get_completed_branchs ${COMP_WORDS[3]})"
+            ;;
         * )
-            [ $COMP_CWORD -eq 1 ] && compreply=$(_get_completed_sub_commands ${COMP_WORDS[1]})
+        if [ $COMP_CWORD -eq 1 ]; then
+            compreply=$(_get_completed_sub_commands ${COMP_WORDS[1]})
+        else
+            compreply=$(ls)
+        fi
             ;;
     esac
     [ -z "$compreply" ] || COMPREPLY=($compreply)
